@@ -1,0 +1,2240 @@
+Start Frame Signal in TI-MAC
+
+
+
+
+Generic Tag: (new branch)
+DONE    Verify CC Debug interface
+        Verify CC serial port (No feature use this port)
+DONE    Verify STM JTAG interface
+DONE    Verify STM Console serial port
+        Verify STM bootstrap serial port (Low priority)
+        
+        implement new HW version detection
+        GPIO/ADC Pins remapping
+        Make charger/gause module run time reload-able based on HW revision
+        Disable Buzzer/Vibrator if not connected based on HW revision (Low priority)
+        Make console de-couple from charger
+        provide a way to switch between run mode and cfg mode
+            - Option 1:
+                press default button button to enter cfg mode
+                timeout to enter run mode
+            - start with 
+        
+        Verify LF works
+        Verify Radio works
+        Verify GPI works
+        Verify GPO works
+        
+        new GPI featurs
+        new GPO featurs
+    
+Personal Prox Tag:(master branch)
+        bootloader: Power on Slow slart cut down to 5 seconds
+        Tag Jamming Config 4 levels
+            Report Always
+            Report on receiving beacons
+            Report only associated
+            Report Never
+        New Default values for Tunning Parameters
+    
+LF new algorithm: (new branch)
+        TBD
+    
+Battery Life/Power management: (new branch/master branch)
+        TBD
+
+
+
+
+
+
+        
+teamviewer
+MineSite
+CatPhillips13
+
+memtst 0x80000000 67108864 4 0 1000000
+memtst 0x80000000 33554432 4 0 1
+
+implementation
+
+#####################################
+#   SSH Tunnel via whithing street  #
+#####################################
+sudo ssh -L 80:localhost:80 -L 25:192.168.0.8:25 -L 143:192.168.0.8:143 -L 8080:192.168.0.82:8080 -L 8090:192.168.0.82:8090 jkang@wiki.minesite.com.au -p 8008
+
+#####################################
+#   SSH Tunnel via China office  #
+#####################################
+sudo ssh csnell@123.157.157.110
+
+ssh -L5900:192.168.8.111:5900 csnell@mst-china
+
+﻿0:21:e8:0:0:0-0:21:e8:ff:ff:ff
+ wlan_mgt.fixed.beacon < 0.204  ||  wlan_mgt.fixed.beacon > 0.205
+
+///////////////////////////////////////////////////// 
+tcpdump -nq -s 0 -i eth0.2 -w dump.pcap port 5060
+tcpdump -i wl0 -s0 ether proto 0x888e  -w /tmp/aa.pcap
+
+Capture beacon:
+sudo tcpdump -ttt -i wlan0 link[0]==0x80 and ether host 02:0B:6B:D9:C5:C9 
+
+Capture PS-POLL
+sudo tcpdump -ttt -i wlan0 link[0]==0xa4 and link[15]==0xD2
+
+Capture NULL:
+sudo tcpdump -vv -ttt -i wlan0 link[0]==0x48
+
+Capture NULL or PS-poll:
+sudo tcpdump -vv -ttt -i wlan0 link[0]==0x48 or link[0]==0xa4
+
+
+(link[8]==0xE2 and link[9]==0x84) or (link[14]==0xE2 and link[15]==0x84)
+
+sudo ip add add 192.168.0.1/24 dev eth0
+
+killall tcpdump
+tcpdump -nq -s 0 -i br0 -w dump_br0_a.pcap &
+tcpdump -nq -s 0 -i eth0 -w dump_eth0_a.pcap &
+tcpdump -nq -s 0 -i wlan0 -w dump_wlan0.pcap &
+
+
+
+
+
+///////////////////////////////////////////////////// 
+sudo ifconfig wlan0 down
+sudo iwconfig wlan0 mode monitor
+sudo iwconfig wlan0 channels 11
+sudo ifconfig wlan0 up
+
+/************************************************************************************************************
+*						BW40(BW70)					BCT-30						BW60
+*						0x80000000-0x80FDFFFF		0x80000000-0x807EFFFF		0x80000000-0x80FEFFFF
+*						(0x7F*0x20000)				(0x7F*0x10000)				(0xFF*0x10000)
+*						0x80FE0000-0x80FFFFFF		0x807F0000-0x807FFFFF		0x80FF0000-0x80FFFFFF
+*						(0x4*0x8000)				(0x8*0x2000)				(0x8*0x2000)
+*
+*	FLASH_BASE			0x80E0000					0x807A0000					0x80E0000
+*	串口下载参数		0x00000-0x17FFF(64K+32K)    0x00000-0x07FFF				0x00000-0x07FFF
+*	开关机时间			0x18000-0x1FFFF(32K)		0x08000-0x0FFFF				0x08000-0x0FFFF
+*	短消息信箱			0x20000-0x3FFFF(128K)	    0x10000-0x1FFFF				0x10000-0x1FFFF
+*	电话本				0x40000-0x5FFFF(128K)		0x20000-0x2FFFF				0x20000-0x2FFFF
+*	无线下载参数		0x60000-0x7FFFF(128K+512K)	0x30000-0x3FFFF				0x30000-0x3FFFF
+*
+*	文件系统			0x100000-0x1BFFFF(1M-128K)	0x40000-0x4FFFF				0x40000-0xBFFFF
+
+*	TFTP信息		    0x1E0000-0x1E7FFF(32K)		0x50000-0x51FFF				0x1F0000-0x1F1FFF
+*	MAC地址				0x1E8000-0x1EFFFF(32K)		0x52000-0x53FFF				0x1F2000-0x1F3FFF
+*	参数表				0x1F0000-0x1F7FFF(32K)		0x54000-0x5BFFF				0x1F4000-0x1FBFFF
+*	通话记录			0x1F8000-0x1FFFFF(32K)		0x5C000-0x5FFFF				0x1FC000-0x1FFFFF
+*
+***************************************************************************************************************/
+Memory Map of the image
+
+  Image Entry point : 0x80020000
+
+  Load Region ROM_LOAD (Base: 0x80020000, Size: 0x001e2210, Max: 0xffffffff, ABSOLUTE)
+
+    Execution Region ROM_EXEC (Base: 0x80020000, Size: 0x001d2110, Max: 0xffffffff, ABSOLUTE)
+    Execution Region UpLoad (Base: 0x801f2110, Size: 0x000013d8, Max: 0xffffffff, ABSOLUTE)
+
+    Execution Region RamBootBlock (Base: 0x40000000, Size: 0x000000cc, Max: 0xffffffff, ABSOLUTE)
+    Execution Region ASMLCD (Base: 0x400000cc, Size: 0x000001c4, Max: 0xffffffff, ABSOLUTE)
+    Execution Region FLASH_OP (Base: 0x40000290, Size: 0x000001b4, Max: 0xffffffff, ABSOLUTE)
+    Execution Region AUDIO (Base: 0x40000444, Size: 0x00002124, Max: 0xffffffff, ABSOLUTE)
+    Execution Region NET (Base: 0x40002568, Size: 0x00000638, Max: 0xffffffff, ABSOLUTE)
+    Execution Region RAM_OS (Base: 0x40002ba0, Size: 0x000073ec, Max: 0xffffffff, ABSOLUTE)
+    Execution Region RAM_LIB (Base: 0x40009f8c, Size: 0x00000254, Max: 0xffffffff, ABSOLUTE)
+    Execution Region ATH_SPEED (Base: 0x4000a1e0, Size: 0x00004704, Max: 0xffffffff, ABSOLUTE)
+
+    Execution Region RAM (Base: 0x81000010, Size: 0x000802f8, Max: 0xffffffff, ABSOLUTE)
+    Execution Region HEAP (Base: 0x81080308, Size: 0x00000004, Max: 0xffffffff, ABSOLUTE, UNINIT)
+    Execution Region STACKS (Base: 0x81800000, Size: 0x00000000, Max: 0xffffffff, ABSOLUTE, UNINIT)
+    
+
+ROM:                Start       End         Length
+                    0x80000000  //(Q)reset addr?
+code:               0x80020000  0x80200000  0x00200000(2M-128K)
+TfTP Download:      0x80800000  //(Q)
+Config:             0x80E00000  0x80FFFFFF  0x00100000(1M)
+
+(Q)                 0x40000000  0x40010000  (64K) 
+
+RAM:                Start       End         Length
+bss:                0x81000010  0x81080308  0x00080308(525,064 - 16)
+heap:               0x81080308
+(Q):                0x81080308  0x81090308  0x00010000(64K) 
+TaskStackHandle:    0x81090308  0x811B0308  0x00120000(1M + 128K)
+AppHeapHandle:      0x811B0308  0x817F0000  0x0063FCF8(6,552,824)
+(Q):                0x817F0000  0x81800000  0x00010000(64K)
+Stacks:             0x81800000
+/************************************************************************************************************
+
+root@NS40:/# wl assoclist
+assoclist 00:21:E8:70:09:56
+assoclist 00:21:E8:70:20:6C
+root@NS40:/# wl authe_sta_list
+authe_sta_list 00:21:E8:70:09:56
+authe_sta_list 00:21:E8:70:20:6C
+root@NS40:/# wl autho_sta_list
+autho_sta_list 00:21:E8:70:09:56
+root@NS40:/#
+
+Passwd: D.s5C%a!Vx_Nx-yQgEZ    
+root@NS40:/etc/config# cat wireless
+
+config 'wifi-device' 'wl0'
+        option 'type' 'broadcom'
+        option 'dtim' '1'
+        option 'channel' '6'
+        option 'txpower' '50'
+
+config 'wifi-iface' 'impactSsid'
+        option 'device' 'wl0'
+        option 'network' 'radio'
+        option 'mode' 'ap'
+        option 'ssid' 'JamesAP'
+        option 'key' 'mineract'
+        option 'encryption' 'psk2'
+
+Physical Address: 00-1A-A0-29-5D-4D
+IP Address: 192.168.0.86
+Subnet Mask: 255.255.255.0
+Default Gateway: 192.168.0.250
+DHCP Server: 192.168.0.9
+Lease Obtained: 13/09/2010 2:29:41 PM
+Lease Expires: 21/09/2010 2:29:41 PM
+DNS Server: 192.168.0.9
+WINS Server: 192.168.0.9
+
+Wireshark Network Analysis The Official Wireshark Certified Network Analyst Study Guide
+
+http://devtools2:8080/browse/ISWNSFW
+
+
+
+cat resolv.conf 
+nameserver 172.16.1.1
+domain minesite.com.au
+search minesite.com.au
+
+
+echo -n "\x3A\x01\x01\x01\xAA\xBB\xCC\xDD" | nc -u 172.16.7.113 12345 
+
+nc -u 172.16.7.113 12345 < ./GET
+
+
+http://172.16.1.160/plt_command.cgi?password=1FGQCx5F67JHRtu38
+http://172.16.1.160/plt_command.cgi?opcode=1&write=1&data=112233445566
+http://172.16.1.160/plt_command.cgi?opcode=0&write=0&data=0
+
+
+
+1.2.840.10036.1.1.1.1
+1.2.840.10036.2.1.1.9.0
+1.2.840.10036.1.1.1.1.0 crash!
+
+
+
+Engenius 00:02:6F:9B:C9:0D
+
+
+172.16.1.155: 00:0B:6B:D9:D2:0A
+172.16.1.156: 00:0B:6B:D9:D3:0C
+
+
+
+
+
+
+sudo tcpdump -i eth0 udp port 12092 and \( host 172.16.1.151 or 172.16.1.243\) and udp[12]=0xd5
+
+
+
+
+
+
+eth.addr==5C:DA:D4:B5:32:DE
+
+
+ 
+
+#make -C package/robocfg/src/  CC="mipsel-linux-uclibc-gcc" PATH="/home/james/work/NS/firmware/trunk/src/staging_dir/toolchain-mipsel_gcc3.4.6/bin:$PATH" 
+#scp package/robocfg/src/robocfg root@172.16.1.157:/root/.
+
+make V=99 package/robocfg/{clean,compile}
+scp build_dir/mipsel/robocfg/robocfg root@172.16.1.157:/root/.
+
+
+
+CC2530 Development Kit ：
+
+http://focus.ti.com/docs/toolsw/folders/print/cc2530dk.html
+
+Debugger and Programmer for RF System-on-Chips:
+
+http://focus.ti.com/docs/toolsw/folders/print/cc-debugger.html
+
+
+
+
+D.s5C%a!Vx_Nx-yQgEZ
+
+
+source of cfe, upgrade
+
+Change the WiFi LED from using wireless tools to use the Broadcom APIs
+This was done as sometimes the wireless tools interface appears not to work 
+
+CFE:
+bootloader/trunk/et:
+    What is this directory for?
+bootloader/trunk/et/cfe*.o:
+    What are these .o files, how to build?
+    I ask this because they are committed binary files.
+
+bootloader/trunk/shared:
+    What is this directory for?
+bootloader/trunk/shared/cfe/*.o:
+    What are these .o files, how to build?
+bootloader/trunk/shared/linux/*.o:
+    What are these .o files, how to build?
+
+bootloader/trunk/preparation/nvserial source code?
+
+Firmware:
+trunk/kernel_mods/bridge:
+    what is this dir?
+    There are files br_rtsp_XXX, while we have trunk/feeds/mst-b44_rapid-spanning-tree.
+trunk/keys:
+    what is the root password?
+    how to set up into firmware?
+    How to generate the keys?
+
+Vendor directory, there are luci/ luci-full/ openwrt/ openwrt-packages/
+    what are they?
+    
+All Tomato source code.
+
+
+
+setenv bootcmd 'nboot.jffs2 0x80100000 0x0 0x190000; bootm'
+setenv bootargs 'console=ttyS0,115200n81 root=/dev/mtdblock3 rw rootfstype=jffs2 init=/sbin/init'
+
+
+
+setenv bootcmd 'tftpboot; bootm'
+setenv loadaddr 0x80100000
+setenv serverip 192.168.1.151
+setenv ipaddr 192.168.1.152
+setenv bootargs 'console=ttyS0,115200n81 root=/dev/nfs rw nfsroot=192.168.1.151:/home/james/lpc3250/rootfs ethaddr=50:ED:F4:02:83:50 ip=192.168.1.152 init=/sbin/init printk.time=1'
+setenv bootargs 'console=ttyS0,115200n81 root=/dev/nfs rw nfsroot=192.168.1.151:/home/james/lpc3250/rootfs ethaddr=50:ED:F4:02:83:50 ip=192.168.1.152 init=/sbin/init'
+
+
+
+
+load blk UBT-QS.BIN raw 0x83fc0000
+load blk UIMG-QS raw 0x80100000
+
+
+rmmod ar6000
+rmmod sdhci_pci
+rmmod sdhci
+rmmod mmc_core
+lsmod | grep 'sd\|mmc\|ar6000'
+
+
+insmod /lib/modules/2.6.38.8-kangjian/kernel/drivers/mmc/core/mmc_core.ko
+insmod /lib/modules/2.6.38.8-kangjian/kernel/drivers/mmc/host/sdhci.ko
+insmod /lib/modules/2.6.38.8-kangjian/kernel/drivers/mmc/host/sdhci-pci.ko
+insmod host/output/LOCAL_i686-SDIO/image/ar6000.ko debughif=255 debughtc=255 debugbmi=255 debugdriver=100 debugflags=0xFFFFFFFF
+
+insmod /tmp/ar6000.ko debughif=0xFFFFFFFF debughtc=0xFFFFFFFF debugbmi=0xFFFFFFFF debugdriver=0xFFFFFFFF debugflags=0xFFFFFFFF bmienable=1 busspeedlow=0 nohifscattersupport=1
+insmod /tmp/ar6000.ko debughif=0xFFFFFFFF debughtc=0xFFFFFFFF debugbmi=0xFFFFFFFF debugdriver=0xFFFFFFFF debugflags=0xFFFFFFFF
+
+insmod $IMAGE/ar6000.ko bmienable=1 busspeedlow=0 nohifscattersupport=1 debuglevel=3
+
+insmod /tmp/sdio_lib.ko
+insmod /tmp/sdio_busdriver.ko
+insmod /tmp/ar6000.spi.ko debughif=0xFFFFFFFF debughtc=0xFFFFFFFF debugbmi=0xFFFFFFFF debugdriver=0xFFFFFFFF debugflags=0xFFFFFFFF debuglevel=100 bmienable=1 busspeedlow=0 nohifscattersupport=1
+
+
+lsmod | grep 'sd\|mmc\|ar6000'
+
+
+Unable to decrement the command credit count register
+ar6000_sysfs_bmi_get_config
+BMI operation failed:
+/system/wifi/softmac
+insmod /tmp/ar6000.ko
+dmesg
+bytes transferred:
+#
+# mount -t nfs -o intr,nolock,rsize=1024,wsize=1024 192.168.6.58:/home/james ./mnt
+# cd /mnt/lpc3130/AR6K_PKG_ISC.build_3.1_RC.563/host/.output/LOCAL_i686_NATIVEMMC-sdio/image/
+# insmod ar6000.ko
+# AR6000: configuration opcode 7 is only used for RTOS systems, not Linux systems
+MAC from EEPROM 00:03:7F:04:E1:25
+android_readwrite_file: file /mnt/lpc3130/AR6K_PKG_ISC.build_3.1_RC.563//softmac filp_open error
+Warning! Random MAC address is just for testing purpose
+MAC from random generated 02:03:7F:10:DF:AA
+AR6000: SDIO bus operation failed! MMC stack returned : -110
+Unable to decrement the command credit count register
+BMI : Unable to Send Message to device
+Unable to write to the device
+BMI operation failed: 1550
+ar6000_avail: ar6000_sysfs_bmi_get_config failed
+ Timeout waiting for recv message
+Target debug interrupt
+ar6000_target_failure: target asserted
+
+
+setenv nfs_path /home/james/nd/work/PS15/trunk/build/proj_fs/rootfs.tmp
+setenv nfs_args 'setenv bootargs console=ttyS0,115200n81 root=/dev/nfs rw nfsroot=${serverip}:${nfs_path} ethaddr=${ethaddr} ip=${ipaddr} init=/sbin/init printk.time=1 loglevel=7'
+setenv nfs_boot 'run nfs_args; tftpboot 0x81000000 ${model}/${model}_upgrade/uImage; bootm 0x81000000'
+
+
+
+mount -t nfs -o intr,nolock,rsize=1024,wsize=1024 192.168.8.151:/home/james/nd/work/PS15/trunk/ /mnt/nfs/
+
+ifconfig eth0 192.168.6.144
+mount -t nfs -o intr,nolock,rsize=1024,wsize=1024 192.168.6.58:/home/james ./mnt
+cd /mnt/lpc3130/AR6K_PKG_ISC.build_3.1_RC.563/host/.output/LOCAL_i686_NATIVEMMC-sdio/image/
+insmod ar6000.ko debughif=0xFFFFFFFF debughtc=0xFFFFFFFF debugbmi=0xFFFFFFFF debugdriver=0xFFFFFFFF debugflags=0xFFFFFFFF
+
+insmod ar6000.ko debughif=0xFFFFFFFF
+./iwconfig wlan0 essid linksys
+ifconfig wlan0 up
+ifconfig wlan0 192.168.1.144
+
+
+insmod ar6000.ko debughif=0x3
+
+
+android_readwrite_file: file /system/wifi/ath6k/AR6003/hw2.1.1/bdata.SD31.bin filp_open error
+Failed to get ath6k/AR6003/hw2.1.1/bdata.SD31.bin
+
+ mkdir system
+mkdir: can't create directory 'system': Read-only file system
+#
+
+
+
+
+
+
+
+
+
+CONFIG_ARCH_LPC32XX
+struct mmc_host_ops
+
+
+208 000 000
+
+
+make-kpkg --initrd --append-to-version=-some-string-here kernel-image kernel-headers
+
+
+ /usr/src/linux-headers-2.6.36-020636-generic
+
+
+sudo apt-get install fakeroot kernel-wedge build-essential makedumpfile kernel-package libncurses5 libncurses5-dev
+sudo apt-get build-dep --no-install-recommends linux-image-$(uname -r)
+mkdir ~/src
+cd ~/src
+apt-get source linux-image-$(uname -r)
+cd linux-2.6.32
+cp -vi /boot/config-`uname -r` .config
+make menuconfig
+export CONCURRENCY_LEVEL=3
+fakeroot make-kpkg clean
+fakeroot make-kpkg --initrd --append-to-version=-kangjian kernel-image kernel-headers
+dpkg 
+sudo update-grub
+
+insmod /tmp/image/ar6000.ko debughif=0xFFFFFFFF debughtc=0xFFFFFFFF debugbmi=0xFFFFFFFF debugdriver=0xFFFFFFFF debugflags=0xFFFFFFFF
+insmod ar6000.ko debughif=0xFFFFFFFF debughtc=0xFFFFFFFF debugbmi=0xFFFFFFFF debugdriver=0xFFFFFFFF debugflags=0xFFFFFFFF
+
+
+insmod /tmp/image/ar6000.ko devmode="ap,sta" mac_addr_method=1
+./hostapd -Kdd james_hostap.conf
+./wpa_supplicant -i wlan1 -c james.conf 
+
+
+insmod ar6000.ko devmode="ap,sta"
+./hostapd james_hostap.conf &
+ifconfig wlan0 192.168.0.141 up
+./wpa_supplicant -i wlan1 -c james.conf &
+ifconfig wlan1 192.168.1.141 up
+
+rfkill: Cannot open RFKILL control device
+
+
+
+
+ifconfig wlan0 172.16.1.152
+ping 172.16.1.87
+ifconfig wlan1 192.168.1.152
+ping 192.168.1.1
+
+brctl addbr br-rpt
+brctl addif br-rpt wlan0
+brctl addif br-rpt wlan1
+
+./wmiconfig -i wlan0 --appsparams --pstype=atheros --psit=50 --psperiod=100 --sleepperiod=10 
+
+killall wpa_supplicant
+killall hostapd
+rmmod ar6000
+
+
+ifconfig wlan0 down
+iwconfig wlan0 mode master
+iwconfig wlan0 essid JJJ
+iwconfig wlan0 commit
+ifconfig wlan0 172.16.1.152 up
+
+ifconfig wlan1 down
+iwconfig wlan1 mode managed
+iwconfig wlan1 essid KKK
+ifconfig wlan1 192.168.1.100 up
+
+
+cd /root/779
+./wpa_supplicant -i wlan1 -c james.conf &
+
+
+bootm $(loadaddr)
+
+
+nand write 31000000 02000000 920000
+ 
+MST Dickson Street
+
+
+https://visalink.com.au/VisaSelection.aspx?FROM=ctmsydnorthca&BDoor=1&NationalityCode=AU&State=NSW&CountryId=44&Country=China&PurposeId=BCH12M
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//                  AMBA initialize:
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+static struct pl022_ssp_controller lpc32xx_ssp0_data = {
+	.bus_id			= 0,
+	.num_chipselect		= 1,
+	.enable_dma		= 0,
+};
+
+static struct amba_device lpc32xx_ssp0_device = {
+	.dev				= {
+		.coherent_dma_mask	= ~0,
+		.init_name		= "dev:ssp0",
+		.platform_data		= &lpc32xx_ssp0_data,
+	},
+	.res				= {
+		.start			= LPC32XX_SSP0_BASE,
+		.end			= (LPC32XX_SSP0_BASE + SZ_4K - 1),
+		.flags			= IORESOURCE_MEM,
+	},
+	.dma_mask			= ~0,
+	.irq				= {IRQ_LPC32XX_SSP0, NO_IRQ},
+};
+
+function phy3250_board_init() calls amba_device_register(&lpc32xx_ssp0_device, &iomem_resource):
+    * link lpc32xx_ssp0_device.dev.bus = &amba_bustype; 
+    * read u32 pid from mapped lpc32xx_ssp0_device.res.end - 0x20, by combining least u8 form each of the 4 X u32.
+    * read u32 cid from mapped lpc32xx_ssp0_device.res.end - 0x40. by combining least u8 form each of the 4 X u32.
+    * if cid is 0xb105f00d, then assign pid(0x00041022) to lpc32xx_ssp0_device.dev->periphid
+    * add device into bus by calling device_add(&lpc32xx_ssp0_device.dev)
+      which calls bus_add_device(&lpc32xx_ssp0_device.dev);
+    
+pl022_init() calls amba_driver_register(&pl022_driver);
+    * pl022_driver.drv.bus = &amba_bustype;
+    * then call the path to probe:
+        driver_register(pl022_driver.drv)->
+        bus_add_driver(pl022_driver.drv)->
+        driver_attach(pl022_driver.drv)->
+        bus_for_each_dev(&amba_bustype, NULL, &pl022_driver.drv, __driver_attach); ->
+        __driver_attach()->
+            * filters device and driver by calling driver_match_device(&pl022_driver.drv, &lpc32xx_ssp0_device)
+              that is pl022_driver.drv.bus.match(),
+              that is amba_bustype.match()
+              that is amba_match()
+              with comparing each item in pl022_driver.drv.id_table.id with lpc32xx_ssp0_device.periphid
+              
+        driver_probe_device()->
+        really_probe()->
+        drv->probe(dev) that is pl022_probe(&lpc32xx_ssp0_device)
+            * amba_request_regions(&lpc32xx_ssp0_device, NULL)
+            * ioremap(&lpc32xx_ssp0_device->res.start, resource_size(&&lpc32xx_ssp0_device->res))
+            * request_irq(&lpc32xx_ssp0_device->irq[0], pl022_interrupt_handler, 0, "pl022", pl022);
+            * init/register spi master
+            
+            
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//                  PL022 SPI initialize:
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+static struct pl022_config_chip spi0_chip_info = {
+	.lbm			= LOOPBACK_DISABLED,
+	.com_mode		= INTERRUPT_TRANSFER,
+	.iface			= SSP_INTERFACE_MOTOROLA_SPI,
+	.hierarchy		= SSP_MASTER,
+	.slave_tx_disable	= 0,
+	.endian_tx		= SSP_TX_LSB,
+	.endian_rx		= SSP_RX_LSB,
+	.data_size		= SSP_DATA_BITS_8,
+	.rx_lev_trig		= SSP_RX_4_OR_MORE_ELEM,
+	.tx_lev_trig		= SSP_TX_4_OR_MORE_EMPTY_LOC,
+	.clk_phase		= SSP_CLK_FIRST_EDGE,
+	.clk_pol		= SSP_CLK_POL_IDLE_LOW,
+	.ctrl_len		= SSP_BITS_8,
+	.wait_state		= SSP_MWIRE_WAIT_ZERO,
+	.duplex			= SSP_MICROWIRE_CHANNEL_FULL_DUPLEX,
+	.cs_control		= phy3250_spi_cs_set,
+};
+
+static struct spi_eeprom eeprom = {
+	.name = "at25256a",
+	.byte_len = 0x8000,
+	.page_size = 64,
+	.flags = EE_ADDR2,
+};
+
+static struct spi_board_info info[] = {
+	{
+		.modalias = "at25",
+		.max_speed_hz = 5000000,
+		.bus_num = 0,
+		.chip_select = 0,
+		.platform_data = &eeprom,
+		.controller_data = &spi0_chip_info,
+	},
+
+
+
+SPI master and device initialization happens in pl022_probe():
+pl022_probe(&lpc32xx_ssp0_device)
+    * alloc spi master: spi_alloc_master(&lpc32xx_ssp0_device.dev) 
+    * spi_register_master(master)
+        * device_add(&master->dev)
+        * scan_boardinfo(master);
+            * spi_new_device(master, &info); 
+                * spi_add_device(proxy); 
+                   * info go to spi device, that is
+                   * proxy->modalias = "at25"
+                   * spi_setup(spi);
+                
+static struct spi_driver at25_driver = {
+	.driver = {
+		.name		= "at25",
+		.owner		= THIS_MODULE,
+	},
+	.probe		= at25_probe,
+	.remove		= __devexit_p(at25_remove),
+};
+
+at25_init() calls spi_register_driver(&at25_driver);
+    * at25_driver.driver.bus = &spi_bus_type;
+    * driver_register(&at25_driver.drv);
+        * bus_add_driver(&at25_driver.drv)
+        * driver_attach(&at25_driver.drv)->
+            * bus_for_each_dev(&spi_bustype, NULL, &at25_driver.drv, __driver_attach); ->
+            __driver_attach()->
+                * filters device and driver by calling driver_match_device(&at25_driver.drv, &spi_device)
+                  that is pl022_driver.drv.bus.match(),
+                  that is spi_bus_type.match()
+                  that is spi_match_device()
+                  strcmp(spi->modalias, drv->name) 
+                  
+            driver_probe_device()->
+            really_probe()->
+            drv->probe(dev) that is at25_probe(struct spi_device *spi)
+                at25->spi = spi_dev_get(spi);
+    
+at25 functions all call spi_read/write with spi device pointer
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//                  How the ar6000_rx get called::
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+1. Interrupt happens, hcd_spi_irq() schedules work that cakks
+        hcd_procirq_wqueue_handler() that calls
+        HcdSpiInterrupt() that calls
+        SDIO_HandleHcdEvent() that calls
+        _SDIO_HandleHcdEvent() that calls
+        DeviceInterrupt() that calls
+        ProcessPendingIrqs() that calls
+        SD_WAKE_OS_HELPER(&pHcd->SDIOIrqHelper) to wakeup the irq helper
+2. the help callstack:
+[  525.620000] [<bf0380b4>] (ar6000_rx+0x0/0x760 [ar6000]) from [<bf027f48>] (DoRecvCompletion+0xbc/0xd4 [ar6000])
+[  525.620000] [<bf027e8c>] (DoRecvCompletion+0x0/0xd4 [ar6000]) from [<bf0294fc>] (HTCRecvMessagePendingHandler+0xc08/0xfd0 [ar6000])
+[  525.620000] [<bf0288f4>] (HTCRecvMessagePendingHandler+0x0/0xfd0 [ar6000]) from [<bf025c20>] (DevDsrHandler+0x1d0/0x5c0 [ar6000])
+[  525.620000] [<bf025a50>] (DevDsrHandler+0x0/0x5c0 [ar6000]) from [<bf0231ec>] (hifIRQHandler+0x2c/0x78 [ar6000])
+[  525.620000] [<bf0231c0>] (hifIRQHandler+0x0/0x78 [ar6000]) from [<bf00ac24>] (SDIOIrqHelperFunction+0x2a8/0x320 [sdio_busdriver])
+[  525.620000] [<bf00a97c>] (SDIOIrqHelperFunction+0x0/0x320 [sdio_busdriver]) from [<bf000834>] (HelperLaunch+0x1c/0x3c [sdio_lib])
+[  525.620000] [<bf000818>] (HelperLaunch+0x0/0x3c [sdio_lib]) from [<c005b61c>] (kthread+0x84/0x8c)
+[  525.620000] [<c005b598>] (kthread+0x0/0x8c) from [<c0047ef0>] (do_exit+0x0/0x604)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//                  How the ar6000_rx get called:
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+callstack:
+[  548.980000] [<bf037398>] (ar6000_avail_ev+0x0/0x8d8 [ar6000]) from [<bf05bad4>] (ar6000_android_avail_ev+0x18/0x20 [ar6000])
+[  548.980000] [<bf05babc>] (ar6000_android_avail_ev+0x0/0x20 [ar6000]) from [<bf025124>] (hifDeviceInserted+0x1f8/0x288 [ar6000])
+[  548.980000] [<bf024f2c>] (hifDeviceInserted+0x0/0x288 [ar6000]) from [<bf009f3c>] (_SDIO_RegisterFunction+0x3cc/0x598 [sdio_busdriver])
+[  548.980000] [<bf009b70>] (_SDIO_RegisterFunction+0x0/0x598 [sdio_busdriver]) from [<bf00c6e0>] (SDIO_RegisterFunction+0x6c/0x94 [sdio_busdriver])
+[  548.980000] [<bf00c674>] (SDIO_RegisterFunction+0x0/0x94 [sdio_busdriver]) from [<bf0252d4>] (HIFInit+0x68/0xc8 [ar6000])
+[  548.980000] [<bf02526c>] (HIFInit+0x0/0xc8 [ar6000]) from [<bf07d108>] (ar6000_init_module+0x108/0x164 [ar6000])
+[  548.980000] [<bf07d000>] (ar6000_init_module+0x0/0x164 [ar6000]) from [<c0026378>] (do_one_initcall+0x60/0x1b0)
+[  548.980000] [<c0026318>] (do_one_initcall+0x0/0x1b0) from [<c0077910>] (sys_init_module+0xc4/0x1fc)
+[  548.980000] [<c007784c>] (sys_init_module+0x0/0x1fc) from [<c0026f60>] (ret_fast_syscall+0x0/0x38)
+
+
+ifconfig eth0 192.168.8.104
+mount -o port=2049,nolock,proto=tcp -t nfs 192.168.8.151:/home/james/work/PS15_firmware/trunk/ /mnt/nfs
+cd /mnt/nfs/platform/ar6103/AR6kSDK.build_3.1_RC.779/AR6kSDK.build_3.1_RC.779/host/.output/lpc3250_arm-spi2/image/
+ 
+insmod sdio_lib.ko
+insmod sdio_busdriver.ko
+insmod lpc3250_ssp_hcd_raw.ko
+insmod ar6000.ko
+
+wpa_supplicant -i wlan0 -c /etc/mst_cfg/wifi/sta.conf  &
+
+ifconfig wlan0 192.168.9.104
+ping 192.168.9.151
+iperf -s
+
+
+iperf -c 192.168.2.100 -P 1 -i 1 -p 5001 -f k -t 1000000
+iperf -c 172.16.1.151 -P 1 -i 1 -p 5001 -f k -t 1000000
+
+iperf -c 172.16.1.69 -P 1 -i 1 -p 5001 -f k -t 10000 -M 1K
+
+
+dhclient -sf /minesite/prog/platform/bin/dhclient-script -q wlan0
+dhclient -sf /minesite/prog/platform/bin/dhclient-script  wlan0
+
+
+
+======================================
+
+mount -o port=2049,nolock,proto=tcp -t nfs 192.168.8.151:/home/james/work/PS15_firmware/trunk/ /mnt/nfs
+cd /mnt/nfs/platform/discovery/src/
+
+
+tftp -g -r upgrade.cramfs -l /tmp/upgrade.cramfs 192.168.8.151
+
+ /tmp/upg_trigger
+
+./discovery -a -i eth0 -f FW_REV -m MODEL -r HW_REV -s UNIT_SN -I $MST_MNT_DIR_PROG/platform/utilities/discovery_set_ip -U /tmp/discovery_get_dhcp_used
+
+$MST_MNT_DIR_PROG/platform/discovery -a -i wlan0 -f FW_REV -m MODEL -r HW_REV -s UNIT_SN -I $MST_MNT_DIR_PROG/platform/utilities/discovery_set_ip -U $MST_MNT_DIR_PROG/platform/utilities/discovery_get_dhcp_used
+
+/minesite/prog/platform/utilities/discovery_set_ip -d eth0 -m dhcp
+interface_setup.sh eth0 1    192.168.8.1
+
+route -n -e del -net 192.168.9.0/24 dev eth0
+route       add -net 192.168.9.0 netmask 255.255.255.0 dev wlan0
+
+version.sh | grep model | sed 's/.*:\s*\(\S*\).*/\1/'
+
+
+
+
+fw_printenv | grep rev | sed 's/rev=//'
+
+
+
+setenv serverip 192.168.8.151
+setenv ipaddr 192.168.8.105
+setenv ethaddr 68:CC:9C:C4:00:05
+setenv wifiaddr 68:CC:9C:C4:00:05
+
+
+
+setenv ramfs_args setenv bootargs console=ttyS0,115200n81 root=/dev/ram0 ethaddr=${ethaddr} printk.time=1 loglevel=7
+setenv ramfs_net_boot 'run ramfs_args; tftpboot 0x81000000 upgrade/uImage; tftpboot 0x82000000 upgrade/initramfs.cpio.gz.uboot; bootm 0x81000000 0x82000000'
+setenv ramfs_nand_boot 'run ramfs_args; nboot 0x81000000 0 0x00400000; nboot 0x82000000 0 0x00800000; bootm 0x81000000 0x82000000'
+
+setenv bootcmd 'run ramfs_nand_boot'
+
+
+tftp -g -r PS15CP/PS15CP_upgrade.bin -l /tmp/upgrade.cramfs 192.168.8.151 &
+tftp -g -r PS15/PS15_upgrade.bin -l /tmp/upgrade.cramfs 192.168.8.151 &
+tftp -g -r WSG/WSG_upgrade.bin -l /tmp/upgrade.cramfs 172.16.1.151 &
+tftp -g -r TWT/TWT_upgrade.bin -l /tmp/upgrade.cramfs 192.168.2.151 &
+touch /tmp/upg_trigger
+
+
+
+
+tftp -g -r libcrypto.so.0.9.8 -l /tmp/libcrypto.so.0.9.8 192.168.8.151 &
+
+
+setenv james_nfs_args 'setenv bootargs console=ttyS0,115200n8 root=/dev/nfs rw nfsroot=${serverip}:/home/james/nd/work/PS15/trunk/rootfs.nfs ethaddr=${ethaddr} ip=${ipaddr} loglevel=7'
+setenv james_nfs_boot 'run james_nfs_args; tftpboot 0x81000000 PS15/PS15_upgrade/uImage; bootm 0x81000000'
+
+setenv ramfs_net_boot 'run ramfs_args; tftpboot 0x81000000 TWT/TWT_upgrade/uImage; tftpboot 0x82000000 TWT/TWT_upgrade/initramfs.cpio.gz.uboot; bootm 0x81000000 0x82000000'
+
+
+
+cp ../stage1/src/nxpmcu_lpc32xx_cdl_v201/nxpmcu/software/csps/lpc32xx/bsps/mst3250/startup/examples/Burners/nand_lb/s1lapp/mst3250_burner_s1app_nand_large_block_gnu.bin .
+cp ../stage1/src/nxpmcu_lpc32xx_cdl_v201/nxpmcu/software/csps/lpc32xx/bsps/mst3250/startup/examples/s1l/s1l_from_kick_full/mst3250_s1l_from_kick_full_gnu.bin .
+
+ ulimit -c unlimited
+ wpa_supplicant -B -i wlan0 -c /etc/mst_cfg/wifi/sta.conf
+
+dd if=/dev/mtdblock6 of=/tmp/ReadOutImage.cramfs
+passphrase [minesite]
+      ssid [JamesTP]
+psk: E0 13 14 1E  A1 0E A1 99  96 A9 17 F3  08 02 C0 99  
+     F1 A1 04 F7  DF 9C 6C 93  EB 65 69 5A  66 09 E7 B3  
+
+============================================================
+Manually config AP as open network
+============================================================
+init_network_if.sh stop
+
+iwconfig wlan0 essid AP-68CC9CC50001
+iwconfig wlan0 mode master
+iwconfig wlan0 enc off
+iwconfig wlan0 key off
+iwconfig wlan0 commit
+
+if no bridge
+    ifconfig wlan0 192.168.9.101 up
+else
+    ifconfig eth0 0.0.0.0 up
+    ifconfig wlan0 0.0.0.0 up
+    brctl addbr br0                      
+    brctl addif br0 eth0                 
+    brctl addif br0 wlan0
+    ifconfig br0 192.168.9.101 up
+    
+route del -net 192.168.9.0/24
+route add -net 192.168.9.0 netmask 255.255.255.0 dev wlan0
+
+iperf -s -P 0 -i 1 -p 5001 -f k
+
+
+============================================================
+Manually config sta as open network
+============================================================
+init_network_if.sh stop
+
+iwconfig wlan0 essid AP-68CC9CC50001
+iwconfig wlan0 enc off
+iwconfig wlan0 key off
+ifconfig wlan0 192.168.9.104 up
+
+route del -net 192.168.9.0/24
+route add -net 192.168.9.0 netmask 255.255.255.0 dev wlan0
+
+iperf -c 192.168.9.101 -P 1 -i 1 -p 5001 -d -f k -t 1000000 
+iperf -c 192.168.12.100 -P 1 -i 1 -p 5001 -d -f k -t 1000000 
+
+
+============================================================
+memory leak test
+============================================================
+mount -t debugfs nodev /sys/kernel/debug/
+cat /sys/kernel/debug/kmemleak
+
+
+
+dmesg > /tmp/boot.log
+scp /tmp/boot.log james@192.168.8.151:/home/james/.
+
+
+
+recEvent  --logfile=/tmp/dbglog.out --srcdir=./include/ &
+
+
+
+
+============================================================
+i2c
+============================================================
+i2cget -y 0 0x22  4 b
+i2cget -y 0 0x22  5 b
+i2cget -y 0 0x22  6 b
+
+i2cget -y 0 0x22  8 b
+i2cget -y 0 0x22  9 b
+i2cget -y 0 0x22 10 b
+
+i2cget -y 0 0x22 12 b
+i2cget -y 0 0x22 13 b
+i2cget -y 0 0x22 14 b
+
+
+i2cdump -r 0x00-0x0f -y 0 0x22
+
+i2cset -y 0 0x22  4 0x00 b
+i2cset -y 0 0x22  5 0x00 b
+i2cset -y 0 0x22  6 0x00 b
+
+#i2cdump -r 0x00-0x0f -y 0 0x22
+
+i2cset -y 0 0x22 12 0x00 b
+i2cset -y 0 0x22 13 0x00 b
+i2cset -y 0 0x22 14 0x00 b
+
+i2cdump -r 0x00-0x0f -y 0 0x22
+
+
+
+
+
+
+i2cset -y 0 0x22  4 0x00 b
+i2cset -y 0 0x22 12 0x00 b
+
+i2cset -y 0 0x22  4 0xFF b
+
+
+
+
+
+
+
+
+
+i2cset -y 0 0x22 12 0x00 b
+i2cset -y 0 0x22  4 0xDF b
+
+i2cset -y 0 0x22 13 0x00 b
+i2cset -y 0 0x22  5 0xDF b
+
+
+i2cset -y 0 0x22 14 0x00 b
+i2cset -y 0 0x22  6 0xBF b
+
+
+
+echo pca9535 0x20 > /sys/bus/i2c/devices/i2c-0/new_device
+
+
+case I2C _SMBUS_I2C_BLOCK_DATA: 
+    len = data->block[0]; 
+    tx_buf[i++] = addr | start_bit; 
+    tx_buf[i++] = command; 
+    if (read_flag) 
+    { 
+       //tx_buf[i++] = addr | start_bit | 1; 
+       i2c_pnx_fill_buffer(&tx_buf[i], 
+           (u8 *)NULL, I2C _SMBUS_BLOCK_MAX + 1); 
+        tx_buf[I2C_SMBUS_BLOCK_MAX + i] |= stop_bit; 
+        smb->rx_buf = &data->block[1]; 
+        smb->flags |= I2C _PNX_SMBUS_BLOCK_RX; 
+        smb->len = len + i; 
+        smb->max_rx_len = I2C _SMBUS_BLOCK_MAX; 
+    }
+    else 
+    { 
+       if (!len) 
+          return -EIO; 
+       i2c_pnx_fill_buffer(&tx_buf[i], + &data->block[1], len); 
+       tx_buf[len + i] |= stop_bit; 
+       smb->len = len + i; 
+   } 
+break; 
+
+echo 104 > /sys/class/gpio/export
+echo 105 > /sys/class/gpio/export
+echo 106 > /sys/class/gpio/export
+echo 107 > /sys/class/gpio/export
+echo 108 > /sys/class/gpio/export
+echo 109 > /sys/class/gpio/export
+echo 110 > /sys/class/gpio/export
+echo 111 > /sys/class/gpio/export
+echo 112 > /sys/class/gpio/export
+echo 113 > /sys/class/gpio/export
+echo 114 > /sys/class/gpio/export
+echo 115 > /sys/class/gpio/export
+echo 116 > /sys/class/gpio/export
+echo 117 > /sys/class/gpio/export
+echo 118 > /sys/class/gpio/export
+echo 119 > /sys/class/gpio/export
+
+echo 120 > /sys/class/gpio/export
+echo 121 > /sys/class/gpio/export
+echo 122 > /sys/class/gpio/export
+echo 123 > /sys/class/gpio/export
+echo 124 > /sys/class/gpio/export
+echo 125 > /sys/class/gpio/export
+echo 126 > /sys/class/gpio/export
+echo 127 > /sys/class/gpio/export
+
+echo 128 > /sys/class/gpio/export
+echo 129 > /sys/class/gpio/export
+echo 130 > /sys/class/gpio/export
+echo 131 > /sys/class/gpio/export
+echo 132 > /sys/class/gpio/export
+echo 133 > /sys/class/gpio/export
+echo 134 > /sys/class/gpio/export
+echo 135 > /sys/class/gpio/export
+
+echo 136 > /sys/class/gpio/export
+echo 137 > /sys/class/gpio/export
+echo 138 > /sys/class/gpio/export
+echo 139 > /sys/class/gpio/export
+echo 140 > /sys/class/gpio/export
+echo 141 > /sys/class/gpio/export
+echo 142 > /sys/class/gpio/export
+echo 143 > /sys/class/gpio/export
+
+
+
+
+echo  'in' > /sys/class/gpio/gpio104/direction
+echo 'out' > /sys/class/gpio/gpio105/direction
+echo 'out' > /sys/class/gpio/gpio106/direction
+echo 'out' > /sys/class/gpio/gpio107/direction
+echo 'out' > /sys/class/gpio/gpio108/direction
+echo  'in' > /sys/class/gpio/gpio109/direction
+echo  'in' > /sys/class/gpio/gpio110/direction
+echo 'out' > /sys/class/gpio/gpio111/direction
+echo  'in' > /sys/class/gpio/gpio112/direction
+echo 'out' > /sys/class/gpio/gpio113/direction
+echo  'in' > /sys/class/gpio/gpio114/direction
+echo 'out' > /sys/class/gpio/gpio115/direction
+echo 'out' > /sys/class/gpio/gpio116/direction
+echo 'out' > /sys/class/gpio/gpio117/direction
+echo 'out' > /sys/class/gpio/gpio118/direction
+echo 'out' > /sys/class/gpio/gpio119/direction
+
+
+echo 'out' > /sys/class/gpio/gpio120/direction
+echo 'out' > /sys/class/gpio/gpio121/direction
+echo 'out' > /sys/class/gpio/gpio122/direction
+echo 'out' > /sys/class/gpio/gpio123/direction
+echo 'out' > /sys/class/gpio/gpio124/direction
+echo 'out' > /sys/class/gpio/gpio125/direction
+echo 'out' > /sys/class/gpio/gpio126/direction
+echo 'out' > /sys/class/gpio/gpio127/direction
+
+echo 'out' > /sys/class/gpio/gpio128/direction
+echo 'out' > /sys/class/gpio/gpio129/direction
+echo 'out' > /sys/class/gpio/gpio130/direction
+echo 'out' > /sys/class/gpio/gpio131/direction
+echo 'out' > /sys/class/gpio/gpio132/direction
+echo 'out' > /sys/class/gpio/gpio133/direction
+echo 'out' > /sys/class/gpio/gpio134/direction
+echo 'out' > /sys/class/gpio/gpio135/direction
+
+echo 'out' > /sys/class/gpio/gpio136/direction
+echo 'out' > /sys/class/gpio/gpio137/direction
+echo 'out' > /sys/class/gpio/gpio138/direction
+echo 'out' > /sys/class/gpio/gpio139/direction
+echo 'out' > /sys/class/gpio/gpio140/direction
+echo 'out' > /sys/class/gpio/gpio141/direction
+echo 'out' > /sys/class/gpio/gpio142/direction
+echo 'out' > /sys/class/gpio/gpio143/direction
+
+
+
+
+
+
+#discharge button 1: open 0: close
+cat /sys/class/gpio/gpio104/value
+
+#Charge Stat
+cat /sys/class/gpio/gpio109/value
+
+#I Fault
+cat /sys/class/gpio/gpio110/value
+
+#PB DC EN 1: open 0: close
+cat /sys/class/gpio/gpio112/value
+
+#DC OUT FB
+cat /sys/class/gpio/gpio114/value
+
+
+echo '0' > /sys/class/gpio/gpio120/value
+echo '1' > /sys/class/gpio/gpio121/value
+echo '1' > /sys/class/gpio/gpio122/value
+echo '1' > /sys/class/gpio/gpio123/value
+echo '1' > /sys/class/gpio/gpio124/value
+echo '1' > /sys/class/gpio/gpio125/value
+echo '1' > /sys/class/gpio/gpio126/value
+echo '1' > /sys/class/gpio/gpio127/value
+
+
+echo '1' > /sys/class/gpio/gpio128/value
+echo '1' > /sys/class/gpio/gpio129/value
+echo '1' > /sys/class/gpio/gpio130/value
+echo '1' > /sys/class/gpio/gpio131/value
+echo '1' > /sys/class/gpio/gpio132/value
+echo '1' > /sys/class/gpio/gpio133/value
+echo '1' > /sys/class/gpio/gpio134/value
+echo '1' > /sys/class/gpio/gpio135/value
+
+echo '1' > /sys/class/gpio/gpio136/value
+
+echo '1' > /sys/class/gpio/gpio137/value
+echo '1' > /sys/class/gpio/gpio138/value
+
+echo '1' > /sys/class/gpio/gpio139/value
+echo '1' > /sys/class/gpio/gpio140/value
+
+echo '1' > /sys/class/gpio/gpio141/value
+echo '1' > /sys/class/gpio/gpio142/value
+
+echo '1' > /sys/class/gpio/gpio143/value
+
+
+
+i2cdump -r 0x00-0x0f -y 0 0x22
+
+
+
+
+
+
+
+
+
+
+
+echo     52 > /sys/class/gpio/export
+echo     in > /sys/class/gpio/gpi01/direction
+echo rising > /sys/class/gpio/gpi01/edge
+cat           /sys/class/gpio/gpi01/edge
+
+echo 104 > /sys/class/gpio/export
+echo  in > /sys/class/gpio/gpio104/direction
+
+echo 105 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio105/direction
+cat        /sys/class/gpio/gpio105/direction
+echo 1   > /sys/class/gpio/gpio105/value
+cat        /sys/class/gpio/gpio105/value
+echo 0   > /sys/class/gpio/gpio105/value
+cat        /sys/class/gpio/gpio105/value
+
+echo 112 > /sys/class/gpio/export
+echo  in > /sys/class/gpio/gpio112/direction
+cat        /sys/class/gpio/gpio112/direction
+cat        /sys/class/gpio/gpio112/value
+
+echo 114 > /sys/class/gpio/export
+echo  in > /sys/class/gpio/gpio114/direction
+cat        /sys/class/gpio/gpio114/direction
+cat        /sys/class/gpio/gpio114/value
+
+echo 113 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio113/direction
+cat        /sys/class/gpio/gpio113/direction
+echo 1   > /sys/class/gpio/gpio113/value
+cat        /sys/class/gpio/gpio113/value
+echo 0   > /sys/class/gpio/gpio113/value
+cat        /sys/class/gpio/gpio113/value
+
+/////////////////////////////////////////////////
+//Button test
+/////////////////////////////////////////////////
+
+echo     52 > /sys/class/gpio/export
+echo     in > /sys/class/gpio/gpi01/direction
+echo rising > /sys/class/gpio/gpi01/edge
+cat           /sys/class/gpio/gpi01/edge
+
+echo 104 > /sys/class/gpio/export
+echo  in > /sys/class/gpio/gpio104/direction
+
+echo 110 > /sys/class/gpio/export
+echo  in > /sys/class/gpio/gpio110/direction
+
+/minesite/data /poll_gpio /sys/class/gpio/gpio104/value /sys/class/gpio/gpio110/value
+
+cat        /sys/class/gpio/gpio110/direction
+cat        /sys/class/gpio/gpio110/value
+
+for i in $(seq 104 1 151);  do echo $i > /sys/class/gpio/export; done
+
+
+
+
+
+
+
+
+
+
+
+//==========================================================================
+for i in $(seq 104 1 151);  do echo $i > /sys/class/gpio/unexport; done
+//--------------------------------------------------------------------------
+rmmod pca953x.ko 
+rmmod i2c-pnx.ko 
+rmmod i2c-dev.ko 
+rmmod i2c-core.ko 
+//--------------------------------------------------------------------------
+echo 0 > /sys/class/gpio/gpo07/value
+echo 1 > /sys/class/gpio/gpo07/value
+//--------------------------------------------------------------------------
+insmod i2c-core.ko 
+insmod i2c-dev.ko 
+insmod i2c-pnx.ko 
+insmod pca953x.ko 
+//--------------------------------------------------------------------------
+for i in $(seq 104 1 151);  do echo $i > /sys/class/gpio/export; done
+//--------------------------------------------------------------------------
+echo out > /sys/class/gpio/gpio104/direction
+echo 0 > /sys/class/gpio/gpio104/value
+echo 1 > /sys/class/gpio/gpio104/value
+//==========================================================================
+
+
+
+
+i2cdump -f -r 0x00-0x0f -y 0 0x22
+i2cdump -f -r 0x00-0x0f -y 0 0x23
+/////////////////////////////////////////////////
+//ADC test
+/////////////////////////////////////////////////
+i2cget -y 0 0x4C
+
+i2cset -y 0 0x4C 0x01
+i2cget -y 0 0x4C
+send_ioctl_w /dev/lpc32xx_adc 74 0 0
+cat /dev/lpc32xx_adc
+
+i2cset -y 0 0x4C 0x02
+i2cget -y 0 0x4C
+send_ioctl_w /dev/lpc32xx_adc 74 0 0
+cat /dev/lpc32xx_adc
+
+LPC32XX_CLKPWR_ADC_CLK_CTRL
+
+
+mount -o port=2049,nolock,proto=tcp -t nfs 192.168.8.151:/home/james/work/PS15_firmware/trunk/ /mnt/nfs
+i2cget -y 0 0x4C
+i2cset -y 0 0x4C 0x01
+send_ioctl_w /dev/lpc32xx_adc 74 0 0
+
+
+
+killall wpa_supplicant
+
+killall discovery
+killall seril_net_bridge
+killall ps_sm_simu
+killall modbus_gateway
+mount -o port=2049,nolock,proto=tcp -t nfs 172.16.1.151:/home/james/work/ps15cp/pscp/ /mnt/nfs
+cd /mnt/nfs
+
+killall dhclient discovery wpa_supplicant ps_sm
+mount -o port=2049,nolock,proto=tcp -t nfs 172.16.1.151:/home/james/work/PS15_firmware/trunk/ /mnt/nfs
+
+
+killall wpa_supplicant
+killall discovery
+killall modbus_gateway
+mount -o port=2049,nolock,proto=tcp -t nfs 172.16.1.151:/home/james/work/wsg/wsg/ /mnt/nfs
+
+
+
+ARCH = arm 
+HOSTCC = 
+CROSS_COMPILE = 
+
+
+mount -o port=2049,nolock,proto=tcp -t nfs 172.16.1.151:/home/james/work/PS15_firmware/trunk/ /mnt/nfs
+rmmod lpc32xx_adc
+insmod /mnt/nfs/platform/adc_driver/lpc32xx_adc.ko
+cd /mnt/nfs/project/src/ps_sm
+
+
+
+killall ps15
+killall wpa_supplicant
+mount -o port=2049,nolock,proto=tcp -t nfs 172.16.1.151:/home/james/work/PS15_firmware/trunk/ /mnt/nfs
+cd /mnt/nfs/project/src/ps_sm
+
+
+
+
+wait on 3 out with 1
+[main_sm.cpp][150]: Got a msg: 2
+[poll_sm.cpp][210]: Got a msg 2
+len=1, 31 00 00
+pb_dc_en_key 0 -> 0
+len=1, 30 00 00
+bat_test_key 1 -> 1
+wait on 3 out with 1
+[main_sm.cpp][150]: Got a msg: 2
+[poll_sm.cpp][210]: Got a msg 2
+len=1, 31 00 00
+pb_dc_en_key 0 -> 0
+len=1, 30 00 00
+bat_test_key 1 -> 1
+
+MSG_BAT_TST_SM_CANCEL
+
+echo 0 > /sys/class/gpio/gpio105/value
+i2cset -y 0 0x4C 0x40
+i2cget -y 0 0x4C
+echo 1 > /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+cat /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+
+
+//adc iout
+i2cset -y 0 0x4C 0x20
+i2cget -y 0 0x4C
+echo 1 > /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+cat /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+
+//adc vbat
+i2cset -y 0 0x4C 0x04
+i2cget -y 0 0x4C
+echo 1 > /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+cat /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+
+//adc i charge
+i2cset -y 0 0x4C 0x08
+i2cget -y 0 0x4C
+echo 1 > /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+cat /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+
+
+//adc rectifier
+echo out > /sys/class/gpio/gpio107/direction 
+echo 0 > /sys/class/gpio/gpio107/value 
+
+cat /sys/class/gpio/gpio107/direction 
+cat /sys/class/gpio/gpio107/value 
+
+i2cset -y 0 0x4C 0x80
+i2cget -y 0 0x4C
+echo 1 > /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+cat /sys/class/lpc32xx_adc_class/lpc32xx_adc/value 
+
+i2cdump -f -r 0x00-0x0f -y 0 0x20
+
+
+i2cdump -f -r 0x00-0x0f -y 0 0x22
+i2cset -f -y 0 0x22  12 0x00 b
+i2cset -f -y 0 0x22  13 0x00 b
+i2cset -f -y 0 0x22  14 0x00 b
+i2cdump -f -r 0x00-0x0f -y 0 0x22
+
+/minesite/prog/app/bin/ps15
+
+
+
+
+
+
+make distclean
+./configure --host=arm-none-linux-gnueabi-
+./configure --host=arm-none-linux-gnueabi-
+make V=99
+
+export PATH=$PATH:/
+./configure --host=../../opt/freescale/usr/local/gcc-4.1.2-glibc-2.5-nptl-3/arm-none-linux-gnueabi/bin/arm-none-linux-gnueabi
+
+gnuplot -p -e "plot 'TEST.dat' using 1:2 title 'Column', 'TEST.dat' using 1:3 title 'Beam';"
+
+
+./modpoll -m tcp -t 0 -r 1 -c 8 172.16.1.80 -1
+./modpoll -m tcp -t 1 -r 1 -c 8 172.16.1.80 -1
+./modpoll -m tcp -a 255 -r 1 -c 6 -t 3:hex  172.16.1.80 -1
+
+
+setenv ramfs_net_boot 'run ramfs_args; tftpboot 0x81000000 PS15/PS15_upgrade/uImage; tftpboot 0x82000000 PS15/PS15_upgrade/initramfs.cpio.gz.uboot; bootm 0x81000000 0x82000000'
+setenv ramfs_net_boot 'run ramfs_args; tftpboot 0x81000000 WSG/WSG_upgrade/uImage; tftpboot 0x82000000 WSG/WSG_upgrade/initramfs.cpio.gz.uboot; bootm 0x81000000 0x82000000'
+
+
+
+flash_eraseall $MST_MTD_UBOOT
+nandwrite -q -p $MST_MTD_UBOOT /tmp/u-boot.bin
+
+
+
+
+setenv KERN_IMG ${model}_upgrade/uImage
+setenv ROOT_IMG ${model}_upgrade/initramfs.cpio.gz.uboot
+setenv PROG_IMG ${model}_upgrade/prog.cramfs
+setenv up_kernel 'mw.b 0x81000000 0xFF 0x00600000; tftpboot 0x81000000 ${model}/${KERN_IMG}; nand erase 0x00600000 0x00600000; nand write 0x81000000 0x00600000 0x00300000'
+setenv up_rootfs 'mw.b 0x81000000 0xFF 0x01400000; tftpboot 0x81000000 ${model}/${ROOT_IMG}; nand erase 0x00C00000 0x01400000; nand write 0x81000000 0x00C00000 0x00800000'
+setenv up_progfs 'mw.b 0x81000000 0xFF 0x02000000; tftpboot 0x81000000 ${model}/${PROG_IMG}; nand erase 0x02000000 0x02000000; nand write 0x81000000 0x02000000 0x01000000'
+
+
+IP=`ifconfig wlan0 | grep inet | sed 's/.*inet addr:\(\S*\).*/\1/'`
+
+ESSID=`iwconfig wlan0 | grep ESSID | sed 's/.*ESSID:"\(.*\)"\s*Nickname.*/\1/'`
+
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+setenv CALI_ADC_BATT_VOL_MV 6.7532,9113
+setenv CALI_ADC_I_CHARGE_MA 2.7997,-126
+setenv CALI_ADC_I_OUT_MA 1.7117,-39
+setenv CALI_ADC_REC_MV 0.000146514397,-0.202653616,111.427015,-11293.7269
+setenv CALI_ADC_15V_MV 27.12477396,0
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+cd /sys/class/gpio/
+echo 87 > export
+cd gpo07
+echo 0 > value
+
+
+
+
+
+i2cget -y 0 0x23 12 b
+i2cget -y 0 0x23 4 b
+i2cset -y 0 0x23 4 0x71 b
+
+
+
+
+
+
+************************************
+    802.15.6
+************************************
+2.4G 250kbps
+1 symbol = 4bits
+         = 4 bits / 250kbps = 16us
+
+BackoffDuration = 20 Symbol 
+                = 20 * 16us = 320us
+                = 320us * 32M counts per second = 10240(0x2400) counts
+
+BaseSlotDuration = 60 symbols 
+                 = 60 * 16us = 960 us 
+                 = 3 BackoffDuration
+                 
+BaseSuperframeDuration = BaseSlotDuration * NumSuperframeSlots = 60 symbols * 16 = 960 symbols
+                       = 960us * 16 = 15.36ms 
+                       = 3 BackoffDuration * 16 = 48 BackoffDuration
+                       
+BeaconOrder = 4
+SuperframeOrder = 4
+SuperframeDuration = BaseSuperframeDuration * 1<<(SuperframeOrder) = 960 symbols * 16 = 15,360 symbols
+                   = 15.36ms * 16 = 245.76ms
+                   = 48 BackoffDuration * 16 = 768(0x300) BackoffDuration
+
+SlotDuration = SuperframeDuration / NumSuperframeSlots
+             = BaseSuperframeDuration * 1<<(SuperframeOrder) / NumSuperframeSlots
+             = 15.36ms * 16 /16 = 15.36ms
+             = 48 BackoffDuration 
+             
+MinCAPLength = 440 symbols
+             = 16us*4*440
+             = 28.160ms
+
+0xFF0000 counts = 522240 us = 522ms
+
+
+
+************************************
+    NAND geometry
+************************************
+ECC block = 256B + 3ECC code
+1 page = 2048B + 64B
+1 block = 64 page = 128KB + 256B
+1 device = 1024 blocks = 128MB + 256KB
+
+16blocks=64*16pages=256*4=0x400
+20blocks=64*20pages=256*5=0x500
+mtdparts=mtdparts=nandflash0:1m@0(stage1),1m(u-boot),1m(param),3m(config),6m(kernel),20m(rootfs),32m(mst-pro),64m(data)
+
+tftp -g -r PRX/PRX_upgrade/initramfs.cpio.gz.uboot -l /minesite/data/upgrade/initramfs.cpio.gz.uboot 192.168.1.151
+tftp -g -r PRX/PRX_upgrade/uImage -l /minesite/data/upgrade/uImage 192.168.1.151 
+
+mtdparts add nand0 0x04000000@0x04000000 data ro
+ubi part data 2048
+ubifsmount data
+ubifsls upgrade/local
+
+mw.b 0x80100000 0xFF 0x00800000
+ubifsload 0x80100000 upgrade/local/initramfs.cpio.gz.uboot
+nand erase 0x00C00000 0x01400000
+nand write 0x80100000 0x00C00000 0x0080000 
+
+ubifsload 0x80100000 upgrade/local/uImage
+
+
+
+
+mw.b 0x80100000 0xFF 0x00800000; tftpboot 0x80100000 ${model}/${model}_upgrade/root.cramfs; nand erase 0x00C00000 0x01400000; nand write 0x80100000 0x00C00000 0x00800000 
+
+setenv bootargs console=ttyS0,115200n81 root=/dev/mtdblock5 rootfstype=cramfs ethaddr=${ethaddr} printk.time=1 loglevel=7
+nboot 0x81000000 0 0x00600000;  bootm 0x81000000
+
+
+=====================================================
+=====================================================
+
+mtdparts add nand0 0x04000000@0x04000000 data ro; ubi part data 2048; ubifsmount data; 
+ubifsls upgrade/
+
+=====================================================
+ramfs_ubifs_boot:
+=====================================================
+run ramfs_args; ubifsload 0x81000000 upgrade/uImage; ubifsload 0x81400000 upgrade/initramfs.cpio.gz.uboot; bootm 0x81000000 0x81400000
+
+=====================================================
+ubifs_upgrade:
+=====================================================
+up_kernel_ubifs 
+mw.b 0x80100000 0xFF 0x00300000; ubifsload 0x80100000 upgrade/uImage; nand erase 0x00600000 0x00600000; nand write 0x80100000 0x00600000 0x00300000
+up_rootfs_ubifs
+mw.b 0x80100000 0xFF 0x00800000; ubifsload 0x80100000 upgrade/initramfs.cpio.gz.uboot; nand erase 0x00C00000 0x01400000; nand write 0x80100000 0x00C00000 0x00800000 
+mw.b 0x80100000 0xFF 0x00800000; ubifsload 0x80100000 upgrade/root.cramfs; nand erase 0x00C00000 0x01400000; nand write 0x80100000 0x00C00000 0x00800000 
+up_progfs_ubifs 
+mw.b 0x80100000 0xFF 0x01000000; ubifsload 0x80100000 upgrade/prog.cramfs; nand erase 0x02000000 0x02000000; nand write 0x80100000 0x02000000 0x01000000 
+
+[root@MST_PS15 /root]# set_config_item.sh
+
+
+Connection received from 192.168.10.103 on port 4099 [13/03 15:14:58.903]
+Read request for file <VMD3/VMD3_SITE.CONF>. Mode octet [13/03 15:14:58.903]
+Using local port 1284 [13/03 15:14:58.903]
+<VMD3\VMD3_SITE.CONF>: sent 1 blk, 0 bytes in 0 s. 0 blk resent [13/03 15:14:58.951]
+Connection received from 192.168.10.103 on port 4100 [13/03 15:14:58.951]
+Read request for file <VMD3/VMD3_68CC9CC20996.CONF>. Mode octet [13/03 15:14:58.951]
+File <VMD3\VMD3_68CC9CC20996.CONF> : error 2 in system call CreateFile The system cannot find the file specified. [13/03 15:14:58.951]
+
+set wireless.radio.1.auto_channel_select.channel_list "1,2,3,4,5,6,7,8,9,10,11"
+
+wsn.udp_session_proxy.server.address 172.16.2.62
+
+
+    {
+        std::stringstream temp_stream;
+        temp_stream << "echo \"" << __func__ << "():" << __LINE__ << "recvfrom() returns " << *response_len << "\" >> /minesite/data/api_debug_info.txt";
+        system(temp_stream.str().c_str());
+    }
+
+set_config_item.sh wireless.radio.1.ap.channel_list 1
+get_config_item.sh wireless.radio.1.ap.channel_list
+get_config_item.sh wireless.radio.1.ap.channel_list | cut -f 1 -d ","    
+
+set_config_item.sh wireless.radio.1.ap.channel_list 1,6,11
+get_config_item.sh wireless.radio.1.ap.channel_list
+get_config_item.sh wireless.radio.1.ap.channel_list | cut -f 1 -d ","    
+
+set_config_item.sh wireless.radio.1.ap.channel_list 
+get_config_item.sh wireless.radio.1.ap.channel_list
+get_config_item.sh wireless.radio.1.ap.channel_list | cut -f 1 -d ","    
+
+./configure --prefix=`pwd`/mst_install --host=arm-none-linux-gnueabi
+
+9999
+/etc/rc.d/init.d/minesite stop
+echo 102 > /sys/class/gpio/export
+echo 0 > /sys/class/gpio/gpo22/value
+ifconfig eth0 up
+umount /minesite/prog/
+mount -t nfs -o intr,nolock,rsize=1024,wsize=1024 192.168.1.151:/home/james/nd/git/prx/lpc-firmware/platform/demo/prx/build/proj_fs/prog /minesite/prog
+mount -t nfs -o intr,nolock,rsize=1024,wsize=1024 172.16.1.151:/home/james/nd/git/prx/lpc-firmware/platform/demo/prx/build/proj_fs/prog /minesite/prog
+
+/minesite/prog/web/sbin/lighttpd -D -f /minesite/prog/web/config/lighttpd.conf -m /minesite/prog/web/lib/
+/minesite/data/web/sbin/lighttpd -f /minesite/data/web/config/lighttpd.conf -m /minesite/data/web/lib/
+
+openssl req -new -x509 -keyout lighttpd.pem -out lighttpd.pem -days 365 -nodes -config /minesite/prog/openssl.conf 
+openssl req -new -keyout lighttpd.pem -out lighttpd.pem -days 36500 -nodes -config /minesite/prog/openssl.conf 
+
+
+
+Lihao: 
+
+Jackie:
+
+Jay:
+    
+Andrew:
+    
+Chris:
+    
+James:
+    
+    
+
+    
+===================================================
+Over all tasks:
+===================================================
+
+
+---------------------------------------------------
+Task: IO board As master, with channing Exciters
+---------------------------------------------------
+    Exciter Master                  (JJ)
+        - cascade discovery
+        - Send Now implementation
+        - Test plan
+    Exciter Chaining                (JJ)
+        - cascde discover
+        - stand along mode
+        
+---------------------------------------------------
+Task: MST Tag Config-er:
+---------------------------------------------------
+    CAN protocol design                 (JJ) - finished
+    SPI(IO2 and UBI) protocol design    (JJ)
+    SPI implementation in ARM7          (JJ)
+    SPI implementation in Ubicom        (CN)
+    ET33 Tag Report                     (JK)
+    ET33 Tag Report forward to Realtime (JK)
+    Application/WEB GUI in Ubicom       (??)
+
+
+
+
+---------------------------------------------------
+Task: Diagnostics
+---------------------------------------------------
+    Diagnostics on EX09
+        - Framework 
+        - Diagnosetics (events) generater
+        - alarm rules to creat/remove alarm on Diagnosetics (events)
+        - alarm objects maintain
+    Diagnostics on IO2
+        - Raw Input collect and send to UBI 
+        - Forward Raw Input from EX to UBI
+    Diagnostics on VIP
+        - Framework 
+        - Raw  Input collector
+        - Diagnosetics (events) generater
+        - alarm rules to creat/remove alarm on Diagnosetics (events)
+        - alarm objects maintain
+    IO2 Get EX09 alarm through CAN and Forward EX09 alarm to UBI through SPI 
+        (X we won't do that)
+    UBI Log alarms
+    UBI show alarms in Web Pages
+    Fixed Exciter/VIP auto recover from Fatal error
+
+---------------------------------------------------
+Task: WAP webpage
+---------------------------------------------------
+    TODO the list
+    
+---------------------------------------------------
+Task: IO2 feature completion 
+    Features migrating to new archtecture
+---------------------------------------------------
+    Document
+        - SPI protocol to finish
+        - design document
+    ADC
+    PWM
+    LED 
+    Low Side
+    RELAY 
+    Toggling peripheral
+    One shot peripheral
+    Output peripheral
+    CAN 1/2
+        - filter
+        - read
+        - write
+    J1587
+    J1939 
+    J1708
+    PIN: interrupt, state
+    UGTPMS
+    SD CARD, data store, file(?)
+    RTC get/set
+
+---------------------------------------------------
+Task: Exciter Factory tools support
+---------------------------------------------------
+    Factory Test Firmware   (JJ)
+    Error Mode Recovery     (JJ)
+
+---------------------------------------------------
+Task: Tag Advanced Power Management:
+---------------------------------------------------
+    Tag CC: Algorithm           (AD) 
+    Tag CC: implementation      (AD) 
+
+    
+    
+---------------------------------------------------
+Task: PDS UTC Sync
+---------------------------------------------------
+    CTRL: ARM7: Get UTC time by SPI from WSG, forward to TX and Panel by CAN, forward to CC by SPI
+    TX: CAN:    Get/Apply UTC time from CTRL
+    Panel: CAN: Get/Apply UTC time from CTRL
+    TAG: CC:    Get UTC time by Radio, forward to STM by SPI
+    TAG: STM:   Get/Apply UTC time from CTRL
+
+--------------------------------
+Documentation: Factory Programming procedure
+--------------------------------
+    Factory programming CTRL Management:  (JK) - finished
+    Factory programming CTRL Main:        (JJ) - finished
+    Factory programming CTRL Radio:       (JK)
+    Factory programming Panel:            (JJ) - finished
+    Factory programming Transmitter:      (KD)
+    Factory programming Tag:              (KD) - finished
+
+---------------------------------------------------
+Task: PDS Unit Serial Number:
+---------------------------------------------------
+    (Stage 2 won't happen until we decide to show/set Unit SN from WSG/UBI Web page)
+    CTRL ARM7: Create a New Item in factory flash partition         (JJ) - finished
+    CTRL ARM7: Factory Test CAN message to Get Set Unit SN          (JJ) - finished
+    CTRL ARM7: Serial Port Console to Get Set Unit SN               (JJ stage 2)
+    Factory Test Software to Set CTRL Unit SN                       (JY) - finished
+    CTRL Production Document Update                                 (PJ)
+    
+    TX XMC:    Create a New Item in factory flash partition         (JJ) - finished
+    TX XMC:    Factory Test CAN message to Get Set Unit SN          (JJ) - finished
+    TX XMC:    Serial Port Console to Get Set Unit SN               (JJ stage 2)
+    Factory Test Software to Set Tx Unit SN                         (JY) - finished
+    TX Production Document Update                                   (PJ)
+    
+    Ex XMC:    Create a New Item in factory flash partition         (JJ) - finished
+    EX XMC:    CAN message to Get Set Unit SN                       (JJ Stage 2)
+    EX XMC:    Serial Port Console to Get Set Unit SN               (JJ) - finished
+    Factory Test Software to Set EX Unit SN                         (JY) - finished
+    EX Production Document Update                                   (PJ)
+    
+    Panel:     Create a New Item in factory flash partition         (JJ) - finished
+    Panel:     Factory Test CAN message to Get Set Unit SN          (JJ) - finished
+    Panel:     Serial Port Console to Get Set Unit SN               (JJ stage 2)
+    Factory Test Software to Set Panel Unit SN                      (JY) - finished
+    Panel Production Document Update                                (PJ)
+    
+    Define CAN message to Get/Set TX/PANEL Unit SN from TX/PANEL    (JJ stage 2)
+    CTRL ARM7: Implement CAN message to Get/Set TX/PANEL Unit SN    (JJ stage 2)
+    TX XMC:    Implement CAN message to Get/Set TX Unit SN to Ctrl  (JJ stage 2)
+    PANEL:     Implement CAN message to Get/Set Panel U SN to Ctrl  (JJ stage 2)
+    
+    Define SPI message for WSG to Get Set CTRL/TX/PANEL Unit SN     (JJ stage 2)
+    CTRL ARM7: Implement SPI message                                (JJ stage 2)
+    WSG:       Implement SPI message                                (JJ stage 2)
+    WSG:       Define API to GET/SET CTRL/TX/PANE Unit SN           (LZ stage 2)
+    WSG:       Define CCV2 message to Get/Set CTRL/TX/PANEL Unit SN (LZ/JJ stage 2)
+    WSG:       Implement API and CCV2 extension                     (LZ/JJ stage 2)
+    WSG:       WEB GUI to set/get Unit SN                           (RC stage 2)
+    WSG:       Expose Unit SN to Device Scanner                     (JJ stage 2)
+
+    Define SPI message for UBI to Get Set EX Unit SN                (CN stage 2)
+    IO2 Board: CAN message to Get Set Unit SN                       (JJ Stage 2)
+    IO2 Board: Implement SPI message                                (JJ stage 2)
+    UBI:       Implement SPI message                                (CN stage 2)
+    UBI:       Web GUI to GET/SET Ex Unit SN                        (CN stage 2)
+    
+---------------------------------------------------
+Task: PED modulator Network interface: pending on requirement
+---------------------------------------------------
+    CCV2 extension                      (LZ) 
+    API                                 (LZ)
+    Lookup sync to ICA                  (LZ)
+    Log                                 (LZ)
+
+
+---------------------------------------------------
+Task: Ux Lite
+---------------------------------------------------
+    CTRL WSG: memory leak of AP mode
+    UX Lite: Ethernet over SPI
+    UX Lite: Topologic Management algorithm
+    UX Lite: CCV2 to proved LLDP info
+    UX Lite: Battery monitoring
+    UX Lite: Reverse tracking client (need data logging)
+    UX Lite: Packets filtering to tune performance
+    UX Lite: Central Configuration Management
+    UX Lite: Device Scanner
+    UX Lite: Unicast PTT Proxy
+
+
+B0 8E 1A 31 2F 97
+
+
+1.992340217958170 x - 80.340357329113200 
+CALI_ADC_I_OUT_MA=1.992340217958170, -80.340357329113200 
+
+ /minesite/prog/web/sbin/lighttpd -f /minesite/prog/web/config/lighttpd.conf -m /minesite/prog/web/lib/
+ /minesite/prog/web/sbin/lighttpd -f /minesite/data/config/lighttpd.conf -m /minesite/prog/web/lib/
+ 
+
+-----------------------------------------------
+WSG setup RTC time
+-----------------------------------------------
+date -s 110415002012
+hwclock -w
+
+
+sudo rmmod cdc_acm
+cd /home/james/tools/xr/xr21v141x-lnx2.6.18-to-3.4-pak
+sudo modprobe usbserial
+sudo insmod vizzini.ko
+
+
+
+
+
+http://kuai.xunlei.com/d/I2KgEjS9ba-UUgQA837
+http://kuai.xunlei.com/d/I2KgEs7GvurVUgQA3d5
+http://kuai.xunlei.com/d/I2KgEgIuAgAPRNdS44f
+
+
+
+license@rowley.co.uk <license@rowley.co.uk>
+
+CrossWorks for ARM 2.3 Evaluation Registration
+
+I would like to evaluate CrossWorks for 30 days. My evaluation registration key is:
+
+#==========*==========#
+|09FCTQO1ZK|6ZGYBZNXF9|
+|04P4TFSJGW|FUWPUO3SD6|
+|2539OJ3OJS|SKN2T167CU|
+|5U10090I38|TH0VV9GHCK|
+|GPYZBDGN5K|VIHBLP53XU|
+#==========*==========#
+
+I understand that this is for evaluation only and must not be used for commercial purposes.
+
+Thanks.
+
+
+
+
+
+license@rowley.co.uk <license@rowley.co.uk>
+CrossWorks for ARM 2.3 Permanent Registration
+
+Please send a permanent activation for my software.  My registration key is:
+
+#==========*==========#
+|0KN24C0T1D|B2CABDNSC3|
+|I1XIBW21A8|C7KAV2XGT6|
+|7OH9ZIAWZL|OBYYDIQRIM|
+|IH4EAU88X5|A3KHTDQ3K5|
+|8ESJEAJH4P|2DHHSIACF5|
+#==========*==========#
+
+I confirm that I am the sole user of the product key used for activation.
+
+Thanks.
+
+
+
+
+echo 101 > /sys/class/gpio/export
+echo 1 > /sys/class/gpio/gpo21/value
+
+
+
+
+
+setenv model PS15
+setenv ethaddr 68:CC:9C:C4:00:12
+setenv wifiaddr 68:CC:9C:C5:00:12
+setenv serial_no J130101018
+setenv checksum D72E34E9
+
+setenv ethaddr 68:CC:9C:C4:00:14
+setenv wifiaddr 68:CC:9C:C5:00:14
+setenv serial_no J121231020
+setenv checksum 241A9C9F
+setenv checksum 374F0848
+
+
+setenv ethaddr 68:CC:9C:C4:00:30
+setenv wifiaddr 68:CC:9C:C5:00:30
+setenv serial_no J130101047
+setenv checksum 4EB5362F
+
+setenv serial_no J130101031
+setenv ethaddr 68:CC:9C:C4:00:20
+setenv wifiaddr 68:CC:9C:C5:00:20
+setenv checksum CC31308B
+		
+
+
+5PYw647FZU
+
+
+
+
+
+    
+
+
+
+fmap=00000000000000000000000000000000
+serial_no=J130101055
+ethaddr=68:CC:9C:C4:00:38
+wifiaddr=68:CC:9C:C5:00:38
+#checksum=0825D336
+checksum=823F9972
+CALI_ADC_BATT_VOL_MV=6.631512621511450,9192.648851520850000
+CALI_ADC_15V_MV=17.697702539298700,163.000000000000000
+CALI_ADC_I_OUT_MA=2.486750951455820,-326.019310252225000
+CALI_ADC_I_CHARGE_MA=3.3609954791332800,-549.9413086935280000
+
+setenv serial_no J130101055
+setenv ethaddr 68:CC:9C:C4:00:38
+setenv wifiaddr 68:CC:9C:C5:00:38
+setenv checksum 823F9972
+
+setenv serial_no J130101034
+setenv ethaddr 68:CC:9C:C4:00:23
+setenv wifiaddr 68:CC:9C:C5:00:23
+setenv checksum 4230F95E
+
+setenv serial_no J130101032
+setenv ethaddr 68:CC:9C:C4:00:21
+setenv wifiaddr 68:CC:9C:C5:00:21
+setenv checksum B6318838
+
+
+
+
+
+
+DE shall be A5
+CRC shall follow content directly
+
+
+set_config_item.sh wireless.radio.1.devmod 1
+set_config_item.sh wireless.radio.1.sta.enabled 1
+set_config_item.sh wireless.radio.1.sta.ssid YourAP_SSID
+set_config_item.sh wireless.radio.1.sta.wpa.cipher 2
+set_config_item.sh wireless.radio.1.sta.wpa.mode 3
+set_config_item.sh wireless.radio.1.sta.wpa.psk YOUR_PASSWORD
+save_config.sh 
+reboot
+
+
+
+
+
+/minesite/data/web/sbin/lighttpd -D -f /minesite/data/web/config/lighttpd.conf -m /minesite/data/web/lib/
+
+
+
+
+|---------------------------------------------------------------------|
+|                 |  Buz    | Buz                | Vib    | Vib       |
+|                 |  Period | Active             | Period | Active    |
+|---------------------------------------------------------------------|
+|0.1.46:  Danger  |  500    | 150-(350)          | 400    | 200-(200) |
+| (old)   Warning |  1100   | 120-(70)-120-(790) | 7000   | 300-(400) |
+|-------------------------------------------------------------------- |
+|0.1.49:  Danger  |  500    | 150-(350)          | 500    | 200-(300) |
+|         Warning |  1000   | 80-(70)-80-(770)   | 1000   | 200-(800) |
+|---------------------------------------------------------------------|
+
+
+Carrier is 125kHz, one period is 8 us
+Each bit is 366us*2=732us = 92 period
+Data rate 1/732us=1,365bits per seconds
+
+
+0-360
+suppose 1 frame in 1 second
+Sample 8 times in 1 frame
+step is 14, 360/14=26 samples.
+26*4/8
+
+A frame length is:
+    Carrier Burst N bits
+    Preamble Wakeup Pattern 16 bits
+    Payload:
+        Magic 8 bits
+        Opcode 8 bits
+        Length 8 bits
+        Payload 1-20 bytes, 8-160 bits
+            while auto resanace happens only at opcode=0x10, payload is 5 bytes, that is 40 bits
+        CRC    16 bits
+
+n+16 +8+8+8+40+16=n+16 +80
+
+
+
+cat tx_adc_test_2014_7_11_TxPilot3Unit2_1.txt | sed  's/.*S1{\(.*\)} S2{\(.*\)} S3{\(.*\)} S4{\(.*\)}/\1 ,\2 ,\3 ,\4/' > tx_adc_test_2014_7_11_TxPilot3Unit2_1.csv
+
+------------------------------------------------------------------------------
+
+FE 5A 5A 89 00 64 0A 01 08 00 00 5E E5 55 55
+F    E    5     A   5    A    8    9     0    0    6    4    0    A    0    1    0    8    0    0    0    0    5    E    E    5    5    5    5    5
+1111 1110 0101 1010 0101 1010 1000 1001  0000 0000 0101 0100 0000 1010 0000 0001 0000 1000 0000 0000 0000 0000 0101 1110 1110 0101 0101 0101 0101 0101
+Pre    |9   6    |9   6   |-- |Magic     |Ex ID = 10         |len=10   |data                                   |CRC                |   trailer
+| preamble&wakeup_pattern |            PDU+CRC                                                                                     |   trailer
+
+------------------------------------------------------------------------------
+
+Manchester Code for preamble&wakeup_pattern:
+0x0E,     0xAA,     0xA9,     0x66,     0x99,     0x66,     0x9D
+0000 1110 1010 1010 1010 1001 0110 0110 1001 1001 0110 0110 1001 1101
+- -  - 1  1 1  1 1  1 1  1 0  0 1  0 1  1 0  1 0  0 1  0 1  1 0  - 0
+          F         E         5         A         5         A(?)
+
+Manchester Code for PDU:
+....
+       
+Manchester Code for trailer:
+0x66,     0x66,     0x66,     0x66
+0110 0110 0110 0110 0110 0110 0110 0110     
+0 1  0 1  0 1  0 1  0 1  0 1  0 1  0 1  
+5         5         5         5   
+
+------------------------------------------------------------------------------
+
+Manchester Code for preamble&wakeup_pattern:
+0xEA,     0xAA,     0xA5,     0xA6,     0xA5,     0xA6
+1110 1010 1010 1010 1010 0101 1010 0110 1010 0101 1010 0110
+- 1  1 1  1 1  1 1  1 1  0 0  1 1  0 1  1 1  0 0  1 1  0 1
+       F         E         6         E         6         -
+
+------------------------------------------------------------------------------
+
+
+
+    0x3A        0xAA         0xA9         0x69         0xA9         0x69     
+    0011 1010   1010 1010    1010 1001    0110 1001    1010 1001    0110 1001            10
+         1 1    1 1  1 1     1 1  1 0     0 1  1 0     1 1  1 0     0 1  1 0
+
+No extra bit:
+          F                   C                   
+                              Wakeup pattern A5A6
+    -  -  1  1   1  1  1  1   1  1  0  0   1  1  0  1 
+    00 00 10 10  10 10 10 10  10 10 01 01  10 10 01 10 
+    0A           AA           A5           A6
+
+with extra bit 1:
+                          Wakeup pattern A5A6
+    -  1  1  1   1  1  1  1   1  0  0  1   1  0  1  1
+    00 10 10 10  10 10 10 10  10 01 01 10  10 01 10 10 
+    2A           AA           96           9A
+    
+1.3.13：
+ 10 10  10 10 10 10  10 10 01 01  10 10 01 10
+ 第1位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第2位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第3位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第4位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第5位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第6位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 这6位是preamble 111111
+ 第7-10位是10 10 01 01, 是A5
+第11-14位是10 10 01 10, 是A6
+
+1.3.14：
+ 10 10 10  10 10 10 10  10 01 01 10  10 01 10 10 
+ 第1位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第2位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第3位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第4位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第5位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 第6位是10,代表366us有载波,366us无载波,对应的二进制值是1
+ 这6位是preamble 111111
+ 第7-10位是10 10 01 01, 是A5
+第11-14位是10 10 01 10, 是A6
+第15-16位是10，代表366us有载波,366us无载波,对应的二进制值是1，是多出来的一位
+ 
+
+68:cc:9c:cb:2e:7c 88
+68:cc:9c:cb:2e:c3 114
+68:cc:9c:cb:2e:97 115
+68:cc:9c:cb:2e:8e 107
+68:cc:9c:cb:2e:8f 112
+68:cc:9c:cb:2e:c3 114
+68:cc:9c:cb:2e:db 88
+68:cc:9c:cb:2e:c6 103
+
+
+VIP 2.0.0 Freeport 
+https://minesite.jira.com/browse/VMD-304?jql=project%20%3D%20VMD%20AND%20status%20in%20%28Open%2C%20%22In%20Progress%22%2C%20Reopened%29%20AND%20fixVersion%20%3D%20%22Firmware%20main%202.0.0%22%20ORDER%20BY%20key%20ASC%2C%20priority%20DESC
+
+VIP 1.10.0 Swick
+https://minesite.jira.com/browse/VMD-145?jql=project%20%3D%20VMD%20AND%20status%20in%20%28Open%2C%20%22In%20Progress%22%2C%20Reopened%29%20AND%20fixVersion%20%3D%20%22Firmware%20main%201.10.0%22%20ORDER%20BY%20key%20ASC%2C%20priority%20DESC
+
+HRAP 2.28.0 Freeport WAP only
+https://minesite.jira.com/browse/HRAP-331?jql=project%20%3D%20HRAP%20AND%20status%20in%20%28Open%2C%20%22In%20Progress%22%2C%20Reopened%29%20AND%20fixVersion%20%3D%20%22Firmware%202.28.0%22%20ORDER%20BY%20key%20ASC%2C%20priority%20DESC
+
+PS15 1.4.0 Station Mode support and bug fix.
+https://minesite.jira.com/browse/PS-55?jql=project%20%3D%20PS%20AND%20status%20%3D%20Open%20AND%20fixVersion%20%3D%20%22Firmware%201.4.0%22%20ORDER%20BY%20priority%20DESC
+
+
+
+Mon, 18 May 2015 09:19:38
+
+    
+ 
+0002 c0a80a68 4578
+0001 68cc9cc4 005d
+0100
+c001
+00
+00010001
+0009
+02 08  4d 53 54 5f 50 53 31 35 
+05 04  c0 a8 0a 64
+03 04  50 53 31 35 
+01 06  68 cc 9c c4 00 5d 
+0c 1f  55 70 74 69  6d 65 3a 20  35 20 64 61  79 73 2c 20
+       31 39 20 68  72 73 2c 20  31 37 20 6d  69 6e 73 
+0b 0a  4a 31 34 30  35 31 33 30  30 32
+09 05  31 2e 32 2e  32
+0a 01  43
+
+00:02: ac:10:01:4f: 45:78:
+00:01: 90:a4:de:f7:3b:81:
+01:00:
+c0:01:
+00:
+00:01:00:01:
+00:09:
+0c:1e: 55:70:3a:20: 31:68:20:33: 39:6d:20:34: 30:73:2c:20: 
+       4d:65:6d:46: 72:65:65:3a: 20:31:32:35: 33:36:
+0b:12: 73:79:73:74: 65:6d:5f:74: 65:73:74:69: 6e:67:5f:5a:
+       65:64:
+0a:04: 30:31:5f:41:
+09:06: 31:2e:36:2e:39:20:
+03:12: 4d:6f:62:69: 6c:65:20:44: 61:74:61:20: 4c:6f:67:67:
+       65:72:
+02:04: 6e:75:6c:6c
+
+
+00 01 68 cc 9c c0 00 0b 
+00 02 ac 10 02 9b 45 79
+01 00
+c0 01
+01
+00 01 00 01 
+00 02
+
+00 02 ac 10 02 9b 45 79
+00 01 68 cc 9c c0 00 0b
+01 00
+c0 01
+00
+00 01 00 01
+00 02
+04 01 00
+07 04 0a 01 01 fe 
+06 04 ff ff ff 00
+05 04 0a 01 01 02
+
+
+7c:83:
+00:00:
+d5:01:
+00:1e: 00:0b:6b:d9: d2:0a:00:80: 00:01:31:2a: 0b:a2:0a:00: 
+       b0:8e:1a:31: 2f:96:22:0b: 00:00:10:00: 00:00
+
+00:0b:6b:d9:d2:0a:  AP MAC
+00:80:              Vendor ID
+00:01:31:2a:        Timestamp
+0b:                 Channel
+a2:                 RSSI
+0a:                 data Rate
+00:                 Reserved
+b0:8e:1a:31:2f:96:  UT33 T=MAC
+22:0b:00:00:        UT30 Data
+10:00:00:00         UT33 Data Extension, up to 10 bytes
+
+
+CALI_ADC_REC_MV_LINEAR=35.392053800620300,141.926203914392000
+CALI_ADC_BATT_VOL_MV=6.715540012087910,9138.854226620740000
+CALI_ADC_15V_MV=18.082191780821900,165.917808219178000
+
+
+
+
+
+telnet> quit
+Connection closed.
+
+  ___  __________________
+ |   \/   |  ____|__   __|
+ | |\__/| |____  |  | |
+ |_|    |_|______|  |_|
+
+VMD3 Configuration
+------------------
+ 1. Wireless Settings
+ 2. Network Settings
+ 3. Maintenance
+ 4. Logout
+ 5. Save & reset
+------------------
+Rev: 1.6.7  1 JUL 2014
+I/O Rev 1.38
+
+Enter selection:
+
+
+
+    object TExpressionNode
+        Name = 'Product Profile Identity'
+        Description = 'The.'
+        DefineName = 'PRODUCT_PROFILE_IDENTITY'
+        Value = '0'
+        Modified = True
+        DefaultValue = '0'
+    end
+      
+  object TExpressionNode
+    Name = 'Product Profile Identity'
+    Description = 
+      'A uint32.'
+    DefineName = 'PRODUCT_PROFILE_IDENTITY_OVERRIDE'
+    ConfigType = kNone
+    OverrideDefine = 'PRODUCT_PROFILE_IDENTITY'
+    Value = '200'
+  end
+
+      
+VIP, IO and Exciter Firmware Dependency
+      
+      
+Bradley Warner
+CEK 32Z
+17 Hope Street Yass NSW 2582
+C P2 Condition Y
+0434 027 237      
+
+6 Dec 6:00 PM
+1715 Yass Valley Way
+ Yass
+
+Yass Service Center
+81 Laidlaw St Yass
+6226 3232
+
+
+
+Claim number:
+    NRM140566860
+Claim consultant:
+    Siniva T
+Claims team phone:
+    1300 736 158
+Claims team email:
+    motorclaims@nrma.com.au
+
+
